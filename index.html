@@ -1,22 +1,9 @@
-Bạn là một lập trình viên Front-end chuyên nghiệp. Tôi đang phát triển một trang web bán hàng một trang (Single Page Website) cho cửa hàng "MediHealth Store" chuyên kinh doanh Thực phẩm dinh dưỡng và Thiết bị y tế, hiện tại đang triển khai trên GitHub Pages.
-
-Dưới đây là các thông tin hệ thống quan trọng cần lưu ý:
-1. Link Google Form dành cho người mua (Nút Đặt ngay): https://docs.google.com/forms/d/e/1FAIpQLSf83lPJSUp72trpesM8B7EWgnjt0bWj3sXWyTe83oXAcP25VA/viewform?usp=dialog
-2. Link Google Form quản trị (Chỉ dùng khi cần chỉnh sửa biểu mẫu, không nhúng vào code): https://docs.google.com/forms/d/1U8p5SatoWu4sHl5u_OWRM_6fz6BaTYWgyXmk2E_q0ck/edit
-3. Thông tin ngân hàng nhận thanh toán qua mã VietQR động:
-   - Ngân hàng: MB BANK (Mã hệ thống API: MB)
-   - Số tài khoản: 0365152673
-   - Chủ tài khoản: PHAM THANH HANG
-   - Nội dung hiển thị yêu cầu: MEDIHEALTH [Tên sản phẩm viết tắt không dấu] [Khách tự điền thêm SĐT]
-
-Mã nguồn HTML/CSS/JavaScript dưới đây đã được cập nhật chuẩn xác thông tin tài khoản MB Bank, sửa lỗi điều hướng Form và tự sinh QR Code động theo chuẩn ngân hàng Việt Nam:
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediHealth - Thực Phẩm Dinh Dưỡng & Thiết Bị Y Tế</title>
+    <title>MediHealth Food - Đồ Ăn Dinh Dưỡng Cao Cấp</title>
     <style>
         :root { 
             --primary: #0077b6; 
@@ -24,7 +11,7 @@ Mã nguồn HTML/CSS/JavaScript dưới đây đã được cập nhật chuẩn
             --bg: #f8f9fa;      
             --dark: #2b2d42;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; color: var(--dark); }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; color: var(--dark); padding-bottom: 50px; }
         header { 
             background: var(--primary); 
             color: white; 
@@ -51,6 +38,7 @@ Mã nguồn HTML/CSS/JavaScript dưới đây đã được cập nhật chuẩn
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
             gap: 25px; 
             padding: 20px 5%; 
+            min-height: 450px;
         }
         .card { 
             background: white; 
@@ -60,6 +48,9 @@ Mã nguồn HTML/CSS/JavaScript dưới đây đã được cập nhật chuẩn
             text-align: center; 
             padding: 20px; 
             transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .card:hover { transform: translateY(-5px); }
         .card img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; background: #eee; }
@@ -72,38 +63,45 @@ Mã nguồn HTML/CSS/JavaScript dưới đây đã được cập nhật chuẩn
         .btn-order { background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; }
         .btn-pay { background: var(--primary); color: white; }
         
+        /* CSS Phân trang */
+        .pagination { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .page-btn { padding: 8px 16px; border: 1px solid var(--primary); background: white; color: var(--primary); cursor: pointer; border-radius: 5px; font-weight: bold; }
+        .page-btn.active { background: var(--primary); color: white; }
+        .page-btn:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 350px; width: 90%; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; text-align: center; max-width: 360px; width: 90%; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .modal-content h2 { margin-top: 0; color: var(--primary); }
-        .modal-content p { margin: 8px 0; text-align: left; font-size: 0.95rem; line-height: 1.4; }
+        .modal-content p { margin: 6px 0; text-align: left; font-size: 0.95rem; }
         .btn-close { background: #6c757d; color: white; width: 100%; margin-top: 15px; display: block; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>MediHealth Store</h1>
-    <nav>Trang chủ | Sản phẩm | Liên hệ</nav>
+    <h1>MediHealth Food</h1>
+    <nav>Trang chủ | Món ăn | Đơn hàng</nav>
 </header>
 
 <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Tìm kiếm sâm, yến, máy đo..." onkeyup="filterMenu()">
+    <input type="text" id="searchInput" placeholder="Tìm kiếm món ăn dinh dưỡng..." onkeyup="handleSearch()">
 </div>
 
 <div class="grid" id="menu"></div>
 
+<div class="pagination" id="paginationControls"></div>
+
 <div id="paymentModal" class="modal">
     <div class="modal-content">
         <h2>Thanh toán qua QR</h2>
-        <img id="qr-code" src="" width="220" height="220" alt="VietQR Code" style="margin: 10px auto; display: block; border: 1px solid #eee; padding: 5px; border-radius: 8px;">
-        <div style="margin-top: 15px;">
+        <img src="z7909838375007_7e5e88c2912f4deff037e0de239ad11c.jpg" width="200" height="440" alt="Mã QR MB Bank" style="margin: 5px auto; display: block; object-fit: contain; border: 1px solid #eee; border-radius: 8px;">
+        <div style="margin-top: 12px;">
             <p>Ngân hàng: <b>MB BANK (Ngân hàng Quân Đội)</b></p>
             <p>Số TK: <b>0365152673</b></p>
             <p>Chủ TK: <b>PHAM THANH HANG</b></p>
-            <p style="background: #fff3cd; padding: 10px; border-radius: 5px; color: #856404; font-size: 0.9rem;">
-                Nội dung chuyển khoản mẫu:<br>
-                <b id="qr-desc" style="font-size: 1.05rem; color: #d90429;">MEDIHEALTH</b><br>
-                <small>*(Bạn vui lòng điền thêm <b>Số điện thoại</b> của mình vào sau nội dung trên để shop tiện liên hệ xác nhận đơn hàng)*</small>
+            <p style="background: #fff3cd; padding: 8px; border-radius: 5px; color: #856404; font-size: 0.85rem; text-align: center; margin-top: 5px;">
+                Nội dung chuyển khoản:<br>
+                <b style="color: #d90429; font-size: 0.95rem;">[Tên sản phẩm + Số điện thoại]</b>
             </p>
         </div>
         <button class="btn btn-close" onclick="closeModal()">Đóng cửa sổ</button>
@@ -111,69 +109,99 @@ Mã nguồn HTML/CSS/JavaScript dưới đây đã được cập nhật chuẩn
 </div>
 
 <script>
+    // Khởi tạo danh sách chuẩn 18 món ăn đầy đủ ảnh minh họa dinh dưỡng chất lượng cao
     const menuItems = [
-        {name: "Sâm Củ Khô Hàn Quốc 6 Năm Tuổi", desc: "Bồi bổ sức khỏe, tăng cường sinh lực và hệ miễn dịch.", price: "1.850.000đ", img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400"},
-        {name: "Yến Sào Khánh Hòa Nguyên Chất", desc: "Tổ yến tinh chế cao cấp, giàu dinh dưỡng cho mọi lứa tuổi.", price: "3.200.000đ", img: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=400"},
-        {name: "Viên Uống Bổ Não Ginkgo Biloba", desc: "Hỗ trợ tăng cường tuần hoàn não, giảm đau đầu và mất ngủ.", price: "350.000đ", img: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400"},
-        {name: "Đông Trùng Hạ Thảo Sấy Thăng Hoa", desc: "Giúp ngủ ngon, bổ phổi, tăng cường sức đề kháng.", price: "950.000đ", img: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=400"},
-        {name: "Nước Hồng Sâm Linh Chi Táo Đỏ", desc: "Thức uống dinh dưỡng, giải độc gan, trẻ hóa cơ thể.", price: "650.000đ", img: "https://images.unsplash.com/photo-1611070973770-b1a672610042?w=400"},
-        {name: "Vitamin Tổng Hợp Cho Người Già", desc: "Cung cấp đầy đủ khoáng chất thiết yếu cho xương khớp.", price: "420.000đ", img: "https://images.unsplash.com/photo-1616671211140-cb9d23fe1151?w=400"},
-        {name: "Máy Đo Huyết Áp Bắp Tay Tự Động", desc: "Công nghệ Nhật Bản, độ chính xác cao, dễ dàng sử dụng.", price: "850.000đ", img: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=400"},
-        {name: "Máy Xông Khí Dung Mũi Họng", desc: "Hỗ trợ điều trị hen suyễn, viêm mũi dị ứng cho trẻ em và người lớn.", price: "680.000đ", img: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=400"},
-        {name: "Tủ/Hộp Y Tế Gia Đình Thông Minh", desc: "Chất liệu nhựa PP cao cấp, chia nhiều ngăn tiện lợi.", price: "180.000đ", img: "https://images.unsplash.com/photo-1607619056574-7b8d304f3c6f?w=400"},
-        {name: "Máy Đo Đường Huyết Safe-Accu", desc: "Trả kết quả nhanh sau 5 giây, kèm theo 50 que thử.", price: "450.000đ", img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400"},
-        {name: "Máy Đo Nồng Độ Oxy SpO2 Kẹp Tay", desc: "Màn hình LED sắc nét, cảnh báo chỉ số oxy trong máu thấp.", price: "290.000đ", img: "https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=400"},
-        {name: "Nhiệt Kế Hồng Ngoại Đo Trán", desc: "Đo thân nhiệt không cần chạm, cho kết quả trong 1 giây.", price: "390.000đ", img: "https://images.unsplash.com/photo-1584516150909-c43331579a9a?w=400"}
+        {name: "Cháo Yến Sào Hạt Sen", desc: "Yến sào nguyên chất kết hợp hạt sen Huế bùi ngậy, bổ dưỡng.", price: "125.000đ", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=400"},
+        {name: "Súp Gà Hầm Nhân Sâm", desc: "Thịt gà ác hầm sâm tươi Hàn Quốc bồi bổ khí huyết sâu.", price: "185.000đ", img: "https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=400"},
+        {name: "Salad Ức Gà Sốt Mè Rang", desc: "Ức gà áp chảo xé phay, rau mầm organic và sốt béo nhẹ.", price: "65.000đ", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400"},
+        {name: "Cá Hồi Áp Chảo Sốt Măng Tây", desc: "Cá hồi Na-uy giàu Omega-3 ăn kèm măng tây áp bơ tỏi.", price: "245.000đ", img: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400"},
+        {name: "Canh Đông Trùng Hạ Thảo", desc: "Hầm cùng sườn non nạc, táo đỏ bổ phổi nâng cao miễn dịch.", price: "150.000đ", img: "https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=400"},
+        {name: "Cơm Lứt Đùi Gà Nướng Mật Ong", desc: "Cơm gạo lứt huyết rồng dẻo thơm, đùi gà góc tư không da.", price: "85.000đ", img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"},
+        {name: "Yến Chưng Đường Phèn Táo Đỏ", desc: "Hũ tươi chưng cách thủy giữ trọn vẹn chất dinh dưỡng.", price: "90.000đ", img: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400"},
+        {name: "Súp Bào Ngư Vi Cá Thượng Hạng", desc: "Bào ngư tươi và nước cốt hầm xương thanh mát đậm đà.", price: "390.000đ", img: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400"},
+        {name: "Bò Úc Cuộn Nấm Kim Châm nướng", desc: "Thịt thịt bò xắt lát mỏng mềm, ít mỡ cuộn nấm ngọt nước.", price: "165.000đ", img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400"},
+        {name: "Chè Dưỡng Nhan Tuyết Yến", desc: "12 vị thảo mộc: tuyết yến, bồ đào, kỷ tử giải nhiệt.", price: "45.000đ", img: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=400"},
+        {name: "Nước Ép Cần Tây Táo Xanh Celery", desc: "Ép lạnh nguyên chất không đường hỗ trợ detox thanh lọc.", price: "40.000đ", img: "https://images.unsplash.com/photo-1610970881699-44a55b4cfd87?w=400"},
+        {name: "Sinh Tố Bơ Hạt Chia Địa Trung Hải", desc: "Bơ sáp béo mịn xay cùng sữa hạt hạnh nhân ít ngọt.", price: "55.000đ", img: "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400"},
+        {name: "Cơm Cuộn Gạo Lứt Kimbap Vega", desc: "Nhân rau củ, củ cải vàng Thụy Sĩ, trứng cuộn thực dưỡng.", price: "60.000đ", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400"},
+        {name: "Cháo Đậu Đỏ Hạt Sen Hạnh Nhân", desc: "Món ăn nhẹ dễ tiêu hóa giàu protein thực vật lành tính.", price: "50.000đ", img: "https://images.unsplash.com/photo-1594610374438-a49a2094cdd2?w=400"},
+        {name: "Miến Gạo Lứt Trộn Hải Sản", desc: "Tôm mực tươi roi rói trộn sốt chua cay nhẹ kiểu Thái.", price: "95.000đ", img: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400"},
+        {name: "Nấm Linh Chi Nướng Sốt Tiêu Xanh", desc: "Món ăn chay thực dưỡng cao cấp, thơm lừng tiêu Phú Quốc.", price: "110.000đ", img: "https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=400"},
+        {name: "Sữa Hạt Ó́c Chó Hạnh Nhân Tươi", desc: "Shop tự xay mới mỗi ngày, không chất bảo quản phụ gia.", price: "35.000đ", img: "https://images.unsplash.com/photo-1556881286-fc6915169721?w=400"},
+        {name: "Trà Kỷ Tử Táo Đỏ Hoa Cúc Tươi", desc: "Thức uống an thần, sáng mắt, giữ ấm và thư giãn sâu.", price: "30.000đ", img: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400"}
     ];
 
-    function renderMenu(itemsToRender = menuItems) {
+    let filteredItems = [...menuItems];
+    let currentPage = 1;
+    const itemsPerPage = 6;
+
+    function renderMenu() {
         const menu = document.getElementById('menu');
-        if(itemsToRender.length === 0) {
-            menu.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#999; padding: 40px;">Không tìm thấy sản phẩm phù hợp.</p>`;
+        if (filteredItems.length === 0) {
+            menu.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#999; padding: 40px;">Không tìm thấy món ăn bạn cần tìm.</p>`;
+            renderPaginationControls(0);
             return;
         }
-        
-        menu.innerHTML = itemsToRender.map(item => `
+
+        // Tính toán vị trí cắt mảng theo logic trang hiện tại
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const itemsToDisplay = filteredItems.slice(startIndex, endIndex);
+
+        menu.innerHTML = itemsToDisplay.map(item => `
             <div class="card">
                 <img src="${item.img}" alt="${item.name}">
                 <h3>${item.name}</h3>
-                <p>${item.desc}</p>
                 <div class="price">${item.price}</div>
                 <div class="btn-group">
                     <a href="https://docs.google.com/forms/d/e/1FAIpQLSf83lPJSUp72trpesM8B7EWgnjt0bWj3sXWyTe83oXAcP25VA/viewform?usp=dialog" target="_blank" class="btn btn-order">Đặt ngay</a>
-                    <button class="btn btn-pay" onclick="showModal('${item.name}')">Thanh toán</button>
+                    <button class="btn btn-pay" onclick="showModal()">Thanh toán</button>
                 </div>
             </div>
         `).join('');
+
+        renderPaginationControls(filteredItems.length);
     }
 
-    function showModal(itemName) { 
-        // Tạo chuỗi nội dung không dấu ngắn gọn phù hợp tiêu chuẩn VietQR
-        const cleanName = itemName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, " ").trim();
-        const words = cleanName.split(" ");
-        const shortName = words.slice(0, 4).join(" ").toUpperCase();
-        const qrContent = `MEDIHEALTH ${shortName}`;
+    function renderPaginationControls(totalItems) {
+        const controlsContainer = document.getElementById('paginationControls');
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
         
-        // Cấu hình API VietQR kết nối trực tiếp đến số tài khoản MB Bank: 0365152673
-        document.getElementById('qr-code').src = `https://img.vietqr.io/image/MB-0365152673-compact2.jpg?accountName=PHAM%20THANH%20HANG&addInfo=${encodeURIComponent(qrContent)}`;
-        document.getElementById('qr-desc').innerText = qrContent;
-        document.getElementById('paymentModal').style.display = 'flex'; 
+        if (totalPages <= 1) {
+            controlsContainer.innerHTML = '';
+            return;
+        }
+
+        let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">Trước</button>`;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+        }
+
+        html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">Sau</button>`;
+        controlsContainer.innerHTML = html;
     }
-    
+
+    function changePage(pageNumber) {
+        currentPage = pageNumber;
+        renderMenu();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function handleSearch() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
+        filteredItems = menuItems.filter(item => item.name.toLowerCase().includes(keyword));
+        currentPage = 1; // Khởi động lại về trang 1 khi lọc dữ liệu
+        renderMenu();
+    }
+
+    function showModal() { document.getElementById('paymentModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('paymentModal').style.display = 'none'; }
 
-    // Bộ lọc sản phẩm thời gian thực
-    function filterMenu() {
-        const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
-        const filtered = menuItems.filter(item => 
-            item.name.toLowerCase().includes(keyword) || 
-            item.desc.toLowerCase().includes(keyword)
-        );
-        renderMenu(filtered);
-    }
+    // Chạy render cấu trúc khi tải trang
     renderMenu();
 </script>
 </body>
 </html>
 
-YÊU CẦU MỚI CỦA TÔI LÀ: [Điền yêu cầu của bạn vào đây...]
+YÊU CẦU MỚI CỦA TÔI LÀ: [Điền thêm yêu cầu nâng cấp giao diện của bạn vào đây...]
