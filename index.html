@@ -3,8 +3,13 @@ Bạn là một lập trình viên Front-end chuyên nghiệp. Tôi đang phát 
 Dưới đây là các thông tin hệ thống quan trọng cần lưu ý:
 1. Link Google Form dành cho người mua (Nút Đặt ngay): https://docs.google.com/forms/d/e/1FAIpQLSf83lPJSUp72trpesM8B7EWgnjt0bWj3sXWyTe83oXAcP25VA/viewform?usp=dialog
 2. Link Google Form quản trị (Chỉ dùng khi cần chỉnh sửa biểu mẫu, không nhúng vào code): https://docs.google.com/forms/d/1U8p5SatoWu4sHl5u_OWRM_6fz6BaTYWgyXmk2E_q0ck/edit
+3. Thông tin ngân hàng nhận thanh toán qua mã VietQR động:
+   - Ngân hàng: MB BANK (Mã hệ thống API: MB)
+   - Số tài khoản: 0365152673
+   - Chủ tài khoản: PHAM THANH HANG
+   - Nội dung hiển thị yêu cầu: MEDIHEALTH [Tên sản phẩm viết tắt không dấu] [Khách tự điền thêm SĐT]
 
-Mã nguồn HTML/CSS/JavaScript hiện tại của trang web đã được tối ưu hóa sự kiện click để không bị lỗi chặn link trên các trình duyệt:
+Mã nguồn HTML/CSS/JavaScript dưới đây đã được cập nhật chuẩn xác thông tin tài khoản MB Bank, sửa lỗi điều hướng Form và tự sinh QR Code động theo chuẩn ngân hàng Việt Nam:
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -62,14 +67,16 @@ Mã nguồn HTML/CSS/JavaScript hiện tại của trang web đã được tối
         .card p { color: #666; font-size: 0.9rem; margin: 5px 0; height: 40px; overflow: hidden; }
         .price { color: var(--accent); font-size: 1.3rem; font-weight: bold; margin: 10px 0; }
         .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
-        .btn { border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; flex: 1; font-size: 0.9rem; text-decoration: none; text-align: center; }
-        .btn-order { background: var(--accent); color: white; display: block; }
+        
+        .btn { border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; flex: 1; font-size: 0.9rem; text-decoration: none; text-align: center; box-sizing: border-box; }
+        .btn-order { background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; }
         .btn-pay { background: var(--primary); color: white; }
+        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 350px; width: 90%; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .modal-content h2 { margin-top: 0; color: var(--primary); }
-        .modal-content p { margin: 8px 0; text-align: left; }
-        .btn-close { background: #6c757d; color: white; width: 100%; margin-top: 15px; }
+        .modal-content p { margin: 8px 0; text-align: left; font-size: 0.95rem; line-height: 1.4; }
+        .btn-close { background: #6c757d; color: white; width: 100%; margin-top: 15px; display: block; }
     </style>
 </head>
 <body>
@@ -88,12 +95,16 @@ Mã nguồn HTML/CSS/JavaScript hiện tại của trang web đã được tối
 <div id="paymentModal" class="modal">
     <div class="modal-content">
         <h2>Thanh toán qua QR</h2>
-        <img id="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MediHealth" width="200" height="200" alt="QR Code">
+        <img id="qr-code" src="" width="220" height="220" alt="VietQR Code" style="margin: 10px auto; display: block; border: 1px solid #eee; padding: 5px; border-radius: 8px;">
         <div style="margin-top: 15px;">
-            <p>Ngân hàng: <b>VIETCOMBANK</b></p>
-            <p>Số TK: <b>1234567890</b></p>
-            <p>Chủ TK: <b>NGUYỄN VĂN A</b></p>
-            <p>Nội dung mẫu: <b id="qr-desc">[Tên sản phẩm]</b></p>
+            <p>Ngân hàng: <b>MB BANK (Ngân hàng Quân Đội)</b></p>
+            <p>Số TK: <b>0365152673</b></p>
+            <p>Chủ TK: <b>PHAM THANH HANG</b></p>
+            <p style="background: #fff3cd; padding: 10px; border-radius: 5px; color: #856404; font-size: 0.9rem;">
+                Nội dung chuyển khoản mẫu:<br>
+                <b id="qr-desc" style="font-size: 1.05rem; color: #d90429;">MEDIHEALTH</b><br>
+                <small>*(Bạn vui lòng điền thêm <b>Số điện thoại</b> của mình vào sau nội dung trên để shop tiện liên hệ xác nhận đơn hàng)*</small>
+            </p>
         </div>
         <button class="btn btn-close" onclick="closeModal()">Đóng cửa sổ</button>
     </div>
@@ -129,7 +140,7 @@ Mã nguồn HTML/CSS/JavaScript hiện tại của trang web đã được tối
                 <p>${item.desc}</p>
                 <div class="price">${item.price}</div>
                 <div class="btn-group">
-                    <button class="btn btn-order" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSf83lPJSUp72trpesM8B7EWgnjt0bWj3sXWyTe83oXAcP25VA/viewform?usp=dialog', '_blank')">Đặt ngay</button>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSf83lPJSUp72trpesM8B7EWgnjt0bWj3sXWyTe83oXAcP25VA/viewform?usp=dialog" target="_blank" class="btn btn-order">Đặt ngay</a>
                     <button class="btn btn-pay" onclick="showModal('${item.name}')">Thanh toán</button>
                 </div>
             </div>
@@ -137,15 +148,21 @@ Mã nguồn HTML/CSS/JavaScript hiện tại của trang web đã được tối
     }
 
     function showModal(itemName) { 
-        const cleanName = itemName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
-        const qrContent = `Thanh_toan_mua_${cleanName}`;
-        document.getElementById('qr-code').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrContent)}`;
-        document.getElementById('qr-desc').innerText = `Chuyển khoản mua ${itemName}`;
+        // Tạo chuỗi nội dung không dấu ngắn gọn phù hợp tiêu chuẩn VietQR
+        const cleanName = itemName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+        const words = cleanName.split(" ");
+        const shortName = words.slice(0, 4).join(" ").toUpperCase();
+        const qrContent = `MEDIHEALTH ${shortName}`;
+        
+        // Cấu hình API VietQR kết nối trực tiếp đến số tài khoản MB Bank: 0365152673
+        document.getElementById('qr-code').src = `https://img.vietqr.io/image/MB-0365152673-compact2.jpg?accountName=PHAM%20THANH%20HANG&addInfo=${encodeURIComponent(qrContent)}`;
+        document.getElementById('qr-desc').innerText = qrContent;
         document.getElementById('paymentModal').style.display = 'flex'; 
     }
     
     function closeModal() { document.getElementById('paymentModal').style.display = 'none'; }
 
+    // Bộ lọc sản phẩm thời gian thực
     function filterMenu() {
         const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
         const filtered = menuItems.filter(item => 
